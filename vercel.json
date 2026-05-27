@@ -1,7 +1,7 @@
 {
   "framework": "vite",
-  "buildCommand": "pnpm --filter @workspace/course-platform run build",
-  "outputDirectory": "artifacts/course-platform/dist",
+  "buildCommand": "pnpm --filter @workspace/course-platform run build && cp -r artifacts/course-platform/dist ./dist",
+  "outputDirectory": "dist",
   "installCommand": "pnpm install --frozen-lockfile",
   "rewrites": [
     { "source": "/((?!.*\\.).*)", "destination": "/index.html" }
