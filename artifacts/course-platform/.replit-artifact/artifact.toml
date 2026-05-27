@@ -19,7 +19,7 @@ run = "pnpm --filter @workspace/course-platform run dev"
 
 [services.production]
 build = [ "pnpm", "--filter", "@workspace/course-platform", "run", "build" ]
-publicDir = "artifacts/course-platform/dist/public"
+publicDir = "artifacts/course-platform/dist"
 serve = "static"
 
 [[services.production.rewrites]]

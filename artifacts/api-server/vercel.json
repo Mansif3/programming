@@ -1,4 +1,7 @@
 {
   "buildCommand": "pnpm run vercel-build",
-  "installCommand": "pnpm install --frozen-lockfile"
+  "installCommand": "pnpm install --frozen-lockfile",
+  "env": {
+    "VITE_API_BASE_URL": "https://zip-replzip--obaydaagl.replit.app"
+  }
 }
