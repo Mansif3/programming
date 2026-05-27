@@ -69,7 +69,7 @@ router.patch("/payments/:id/status", async (req, res): Promise<void> => {
     const batchesToEnroll = [...autoEnrollBatches];
 
     // Also add manually selected batchId if provided and not already in the list
-    if (batchId && !autoEnrollBatches.find((b) => b.id === batchId)) {
+    if (batchId && !autoEnrollBatches.find((b: any) => b.id === batchId)) {
       const [manualBatch] = await db.select({ id: batchesTable.id, name: batchesTable.name })
         .from(batchesTable).where(eq(batchesTable.id, batchId));
       if (manualBatch) batchesToEnroll.push(manualBatch);

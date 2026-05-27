@@ -18,10 +18,10 @@ type ProblemBody = {
 router.get("/admin/problems", async (_req, res): Promise<void> => {
   const problems = await db.select().from(problemsTable).orderBy(problemsTable.id);
   const withCounts = await Promise.all(
-    problems.map(async (p) => {
+    problems.map(async (p: any) => {
       const tcs = await db.select({ id: testCasesTable.id, marks: testCasesTable.marks })
         .from(testCasesTable).where(eq(testCasesTable.problemId, p.id));
-      return { ...p, testCaseCount: tcs.length, totalMarks: tcs.reduce((s, t) => s + t.marks, 0) || p.totalMarks };
+      return { ...p, testCaseCount: tcs.length, totalMarks: tcs.reduce((s: number, t: any) => s + t.marks, 0) || p.totalMarks };
     })
   );
   res.json(withCounts);
@@ -126,7 +126,7 @@ router.delete("/admin/test-cases/:id", async (req, res): Promise<void> => {
 router.get("/admin/problem-bundles", async (_req, res): Promise<void> => {
   const bundles = await db.select().from(problemBundlesTable).orderBy(problemBundlesTable.id);
   const withCounts = await Promise.all(
-    bundles.map(async (b) => {
+    bundles.map(async (b: any) => {
       const items = await db.select({ id: bundleProblemsTable.id })
         .from(bundleProblemsTable).where(eq(bundleProblemsTable.bundleId, b.id));
       return {
@@ -223,11 +223,11 @@ router.get("/problems", async (_req, res): Promise<void> => {
   const bundleProblems = await db
     .select({ problemId: bundleProblemsTable.problemId })
     .from(bundleProblemsTable);
-  const bundleProblemIds = bundleProblems.map((r) => r.problemId);
+  const bundleProblemIds = bundleProblems.map((r: any) => r.problemId);
 
   const problems = await db.select().from(problemsTable).orderBy(problemsTable.id);
   const freePracticeProblems = bundleProblemIds.length > 0
-    ? problems.filter((p) => !bundleProblemIds.includes(p.id))
+    ? problems.filter((p: any) => !bundleProblemIds.includes(p.id))
     : problems;
   res.json(freePracticeProblems);
 });
@@ -292,7 +292,7 @@ router.post("/problems/:id/judge", async (req, res): Promise<void> => {
   if (!testCases.length) { res.status(400).json({ error: "No test cases for this problem" }); return; }
 
   const results = await Promise.all(
-    testCases.map(async (tc) => {
+    testCases.map(async (tc: any) => {
       try {
         const actualOutput = await compileAndRun(code, tc.input);
         const expectedOutput = tc.expectedOutput.trim();
@@ -305,8 +305,8 @@ router.post("/problems/:id/judge", async (req, res): Promise<void> => {
     })
   );
 
-  const earnedMarks = results.reduce((s, r) => s + r.marks, 0);
-  const totalMarks = results.reduce((s, r) => s + r.maxMarks, 0);
+  const earnedMarks = results.reduce((s: number, r: any) => s + r.marks, 0);
+  const totalMarks = results.reduce((s: number, r: any) => s + r.maxMarks, 0);
 
   // Persist best submission per user per problem
   const userId = getSessionUserId(req);

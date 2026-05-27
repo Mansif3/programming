@@ -20,7 +20,7 @@ router.get("/stats/dashboard", async (_req, res): Promise<void> => {
 router.get("/stats/video-duration", async (req, res): Promise<void> => {
   const today = new Date();
   const days = req.query.period === "monthly" ? 30 : 7;
-  const data = [];
+  const data: { date: string; minutes: number }[] = [];
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
@@ -38,7 +38,7 @@ router.get("/stats/module-completion", async (req, res): Promise<void> => {
   const daysInMonth = new Date(year, month, 0).getDate();
 
   const completedDays = new Set([1, 3, 5, 6, 8, 9, 12, 13, 14, 15, 17, 19, 20]);
-  const result = [];
+  const result: { day: number; completed: boolean }[] = [];
   for (let day = 1; day <= daysInMonth; day++) {
     result.push({ day, completed: completedDays.has(day) });
   }
