@@ -47,7 +47,7 @@ export default function Register() {
         },
         onError: (err: unknown) => {
           if (err instanceof ApiError) {
-            const data = err.data as { error?: string } | null;
+            const data = (err as ApiError).data as { error?: string } | null;
             setError(data?.error ?? "Registration failed. Please try again.");
           } else {
             setError((err as Error)?.message ?? "Registration failed. Please try again.");

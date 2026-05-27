@@ -49,14 +49,17 @@ export default function Login() {
           setLocation("/my-classes");
         },
         onError: (err: unknown) => {
-          if (err instanceof ApiError && err.status === 403) {
-            const data = err.data as { error?: string; devices?: UserDevice[] } | null;
-            setError(data?.error ?? "Device limit reached.");
-            setDevices(data?.devices ?? null);
-          } else if (err instanceof ApiError) {
-            const data = err.data as { error?: string } | null;
-            setError(data?.error ?? "Login failed. Please try again.");
-            setDevices(null);
+          if (err instanceof ApiError) {
+            const apiErr = err as ApiError;
+            if (apiErr.status === 403) {
+              const data = apiErr.data as { error?: string; devices?: UserDevice[] } | null;
+              setError(data?.error ?? "Device limit reached.");
+              setDevices(data?.devices ?? null);
+            } else {
+              const data = apiErr.data as { error?: string } | null;
+              setError(data?.error ?? "Login failed. Please try again.");
+              setDevices(null);
+            }
           } else {
             setError((err as Error)?.message ?? "Login failed. Please try again.");
             setDevices(null);
