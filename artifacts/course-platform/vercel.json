@@ -1,12 +1,11 @@
 {
-  "buildCommand": "cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @workspace/course-platform run build",
-  "outputDirectory": "dist/public",
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "framework": null,
-  "env": {
-    "BASE_PATH": "/"
-  },
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "dist",
+  "installCommand": "pnpm install --frozen-lockfile",
   "rewrites": [
     { "source": "/((?!.*\\.).*)", "destination": "/index.html" }
-  ]
+  ],
+  "env": {
+    "BASE_PATH": "/"
+  }
 }
