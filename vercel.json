@@ -1,12 +1,4 @@
 {
-  "framework": "vite",
-  "buildCommand": "pnpm --filter @workspace/course-platform run build",
-  "outputDirectory": "dist",
-  "installCommand": "pnpm install --frozen-lockfile",
-  "rewrites": [
-    { "source": "/((?!.*\\.).*)", "destination": "/index.html" }
-  ],
-  "env": {
-    "BASE_PATH": "/"
-  }
+  "buildCommand": "pnpm --filter @workspace/course-platform run build && mkdir -p .vercel/output/static && cp -r artifacts/course-platform/dist/. .vercel/output/static/ && printf '{\"version\":3,\"routes\":[{\"src\":\"/assets/(.*)\",\"dest\":\"/assets/$1\",\"headers\":{\"cache-control\":\"public, max-age=31536000, immutable\"}},{\"handle\":\"filesystem\"},{\"src\":\"/(.*)\",\"dest\":\"/index.html\"}]}' > .vercel/output/config.json",
+  "installCommand": "pnpm install --frozen-lockfile"
 }
