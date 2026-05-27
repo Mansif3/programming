@@ -1,0 +1,3056 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Course Platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: Storage
+    description: Object storage upload and serving endpoints.
+  - name: settings
+    description: Site settings operations
+  - name: health
+    description: Health operations
+  - name: courses
+    description: Course operations
+  - name: modules
+    description: Module operations
+  - name: lessons
+    description: Lesson operations
+  - name: enrollments
+    description: Enrollment operations
+  - name: bootcamps
+    description: Bootcamp and event operations
+  - name: helpdesk
+    description: Help desk operations
+  - name: announcements
+    description: Announcement operations
+  - name: users
+    description: User operations
+  - name: stats
+    description: Stats and analytics
+
+paths:
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
+      responses:
+        '200':
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '400':
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Failed to generate upload URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /storage/objects/{objectPath}:
+    get:
+      tags: [Storage]
+      operationId: getStorageObject
+      summary: Serve an object entity from PRIVATE_OBJECT_DIR
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object content streamed with correct Content-Type.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Object not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /settings:
+    get:
+      operationId: getSiteSettings
+      tags: [settings]
+      summary: Get site settings
+      responses:
+        "200":
+          description: Site settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteSettingsResponse"
+    patch:
+      operationId: updateSiteSettings
+      tags: [settings]
+      summary: Update site settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteSettingsInput"
+      responses:
+        "200":
+          description: Updated site settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteSettingsResponse"
+
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /courses:
+    get:
+      operationId: listCourses
+      tags: [courses]
+      summary: List all courses
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: featured
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+
+    post:
+      operationId: createCourse
+      tags: [courses]
+      summary: Create a course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+
+  /courses/{id}:
+    delete:
+      operationId: deleteCourse
+      tags: [courses]
+      summary: Delete a course
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+    get:
+      operationId: getCourse
+      tags: [courses]
+      summary: Get a course by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Course details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseDetail"
+
+  /courses/{id}/modules:
+    get:
+      operationId: getCourseModules
+      tags: [modules]
+      summary: Get modules for a course
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of modules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Module"
+
+  /lessons/{id}:
+    get:
+      operationId: getLesson
+      tags: [lessons]
+      summary: Get a lesson by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lesson details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+
+  /lessons/{id}/complete:
+    post:
+      operationId: completeLesson
+      tags: [lessons]
+      summary: Mark a lesson as complete
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Completion status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonCompletion"
+
+  /enrollments:
+    get:
+      operationId: listEnrollments
+      tags: [enrollments]
+      summary: List enrolled courses for current user
+      responses:
+        "200":
+          description: List of enrollments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Enrollment"
+
+  /enrollments/{courseId}:
+    get:
+      operationId: getEnrollment
+      tags: [enrollments]
+      summary: Get enrollment details for a course
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Enrollment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Enrollment"
+
+  /bootcamps:
+    get:
+      operationId: listBootcamps
+      tags: [bootcamps]
+      summary: List bootcamps and events
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [bootcamp, event]
+      responses:
+        "200":
+          description: List of bootcamps/events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bootcamp"
+    post:
+      operationId: createBootcamp
+      tags: [bootcamps]
+      summary: Create a bootcamp or event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BootcampInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bootcamp"
+
+  /bootcamps/{id}:
+    get:
+      operationId: getBootcamp
+      tags: [bootcamps]
+      summary: Get bootcamp details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Bootcamp details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bootcamp"
+    delete:
+      operationId: deleteBootcamp
+      tags: [bootcamps]
+      summary: Delete a bootcamp
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /helpdesk/posts:
+    get:
+      operationId: listPosts
+      tags: [helpdesk]
+      summary: List help desk posts
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum: [all, mine, admin]
+      responses:
+        "200":
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"
+
+    post:
+      operationId: createPost
+      tags: [helpdesk]
+      summary: Create a help desk post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /helpdesk/posts/{id}:
+    delete:
+      operationId: deletePost
+      tags: [helpdesk]
+      summary: Delete a helpdesk post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+    patch:
+      operationId: updatePostStatus
+      tags: [helpdesk]
+      summary: Update post status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostStatusUpdate"
+      responses:
+        "200":
+          description: Updated post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+    get:
+      operationId: getPost
+      tags: [helpdesk]
+      summary: Get a post by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Post details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /helpdesk/posts/{id}/comments:
+    get:
+      operationId: listComments
+      tags: [helpdesk]
+      summary: List comments for a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+
+    post:
+      operationId: createComment
+      tags: [helpdesk]
+      summary: Add a comment to a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+
+  /announcements:
+    get:
+      operationId: listAnnouncements
+      tags: [announcements]
+      summary: List announcements
+      responses:
+        "200":
+          description: List of announcements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Announcement"
+    post:
+      operationId: createAnnouncement
+      tags: [announcements]
+      summary: Create an announcement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnnouncementInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+
+  /announcements/{id}:
+    delete:
+      operationId: deleteAnnouncement
+      tags: [announcements]
+      summary: Delete an announcement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /my/batches:
+    get:
+      operationId: getMyBatches
+      tags: [student]
+      summary: Get current student's enrolled batches
+      responses:
+        "200":
+          description: Enrolled batches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MyBatch"
+
+  /my/batches/{id}/classes:
+    get:
+      operationId: getMyBatchClasses
+      tags: [student]
+      summary: Get published classes for an enrolled batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Classes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BatchClass"
+        "403":
+          description: Not enrolled
+
+  /my/batches/{id}/helpdesk:
+    get:
+      operationId: getBatchHelpdesk
+      tags: [student]
+      summary: Get help desk posts for an enrolled batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BatchPost"
+        "403":
+          description: Not enrolled
+    post:
+      operationId: createBatchHelpdeskPost
+      tags: [student]
+      summary: Create a help desk post in an enrolled batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchPostInput"
+      responses:
+        "201":
+          description: Created post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchPost"
+
+  /my/batches/{id}/helpdesk/{postId}/comments:
+    get:
+      operationId: getBatchPostComments
+      tags: [student]
+      summary: Get comments for a batch help desk post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BatchComment"
+    post:
+      operationId: createBatchPostComment
+      tags: [student]
+      summary: Add a comment to a batch help desk post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchCommentInput"
+      responses:
+        "201":
+          description: Created comment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchComment"
+
+  /my/batches/{id}/stats:
+    get:
+      operationId: getMyBatchStats
+      tags: [student]
+      summary: Get progress stats and weekly video duration for a batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Batch stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchStats"
+
+  /my/batches/{id}/announcements:
+    get:
+      operationId: getMyBatchAnnouncements
+      tags: [student]
+      summary: Get recent announcements for enrolled student
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Announcements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnnouncementItem"
+
+  /my/batches/{id}/classes/{classId}/watch:
+    post:
+      operationId: markBatchClassWatched
+      tags: [student]
+      summary: Mark a batch class as watched
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: classId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WatchInput"
+      responses:
+        "200":
+          description: Watch recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+
+  /admin/batches:
+    get:
+      operationId: listBatches
+      tags: [admin]
+      summary: List all batches
+      responses:
+        "200":
+          description: Batches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Batch"
+    post:
+      operationId: createBatch
+      tags: [admin]
+      summary: Create a new batch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchInput"
+      responses:
+        "201":
+          description: Created batch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Batch"
+
+  /admin/batches/{id}:
+    get:
+      operationId: getBatch
+      tags: [admin]
+      summary: Get batch with classes and students
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Batch detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateBatch
+      tags: [admin]
+      summary: Update a batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchInput"
+      responses:
+        "200":
+          description: Updated batch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Batch"
+    delete:
+      operationId: deleteBatch
+      tags: [admin]
+      summary: Delete a batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/batches/{id}/classes:
+    post:
+      operationId: createBatchClass
+      tags: [admin]
+      summary: Add a class to a batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchClassInput"
+      responses:
+        "201":
+          description: Created class
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchClass"
+
+  /admin/batches/{id}/classes/{classId}:
+    patch:
+      operationId: updateBatchClass
+      tags: [admin]
+      summary: Update a batch class
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: classId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchClassInput"
+      responses:
+        "200":
+          description: Updated class
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchClass"
+    delete:
+      operationId: deleteBatchClass
+      tags: [admin]
+      summary: Delete a batch class
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: classId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/problem-bundles:
+    get:
+      operationId: listProblemBundles
+      tags: [admin]
+      summary: List all problem bundles
+      responses:
+        "200":
+          description: List of problem bundles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProblemBundle"
+    post:
+      operationId: createProblemBundle
+      tags: [admin]
+      summary: Create a problem bundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProblemBundleCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemBundle"
+
+  /admin/problem-bundles/{id}:
+    patch:
+      operationId: updateProblemBundle
+      tags: [admin]
+      summary: Update a problem bundle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProblemBundleCreate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemBundle"
+    delete:
+      operationId: deleteProblemBundle
+      tags: [admin]
+      summary: Delete a problem bundle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/problem-bundles/{id}/problems:
+    get:
+      operationId: listBundleProblems
+      tags: [admin]
+      summary: List problems in a bundle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Problems in bundle
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BundleProblemItem"
+    post:
+      operationId: addBundleProblem
+      tags: [admin]
+      summary: Add a problem to a bundle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddBundleProblemInput"
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /admin/problem-bundles/{id}/problems/{problemId}:
+    delete:
+      operationId: removeBundleProblem
+      tags: [admin]
+      summary: Remove a problem from a bundle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: problemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  /admin/batches/{id}/problem-bundles:
+    get:
+      operationId: listBatchProblemBundles
+      tags: [admin]
+      summary: List problem bundle assignments for a batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BatchProblemBundleAssignment"
+    post:
+      operationId: assignBatchProblemBundle
+      tags: [admin]
+      summary: Assign a problem bundle to a batch with time window
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignBatchProblemBundleInput"
+      responses:
+        "201":
+          description: Assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchProblemBundleAssignment"
+
+  /admin/batches/{id}/problem-bundles/{assignmentId}:
+    patch:
+      operationId: updateBatchProblemBundle
+      tags: [admin]
+      summary: Update a batch problem bundle time window
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBatchProblemBundleInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchProblemBundleAssignment"
+    delete:
+      operationId: removeBatchProblemBundle
+      tags: [admin]
+      summary: Remove a problem bundle from a batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  /my/batches/{id}/problems:
+    get:
+      operationId: listBatchProblems
+      tags: [batches]
+      summary: Get problems from bundles assigned to this batch (student)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Problem bundles with problems
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BatchProblemBundleResult"
+        "401":
+          description: Not authenticated
+        "403":
+          description: Not enrolled
+
+  /admin/batches/{id}/students:
+    post:
+      operationId: addBatchStudent
+      tags: [admin]
+      summary: Add a student to a batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddBatchStudentInput"
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchStudentItem"
+
+  /admin/batches/{id}/students/{userId}:
+    delete:
+      operationId: removeBatchStudent
+      tags: [admin]
+      summary: Remove a student from a batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  /admin/students:
+    get:
+      operationId: listAdminStudents
+      tags: [admin]
+      summary: List all students with admin details
+      responses:
+        "200":
+          description: Students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminStudent"
+
+    post:
+      operationId: createAdminStudent
+      tags: [admin]
+      summary: Create a new user (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminStudentCreate"
+      responses:
+        "201":
+          description: Created user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStudent"
+        "409":
+          description: Email or phone already exists
+
+  /admin/students/{id}:
+    get:
+      operationId: getAdminStudent
+      tags: [admin]
+      summary: Get a student profile (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStudent"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateAdminStudent
+      tags: [admin]
+      summary: Update a student profile (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminStudentUpdate"
+      responses:
+        "200":
+          description: Updated student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStudent"
+    delete:
+      operationId: deleteAdminStudent
+      tags: [admin]
+      summary: Delete a user (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /devices:
+    get:
+      operationId: listDevices
+      tags: [users]
+      summary: List active login devices for the current user
+      responses:
+        "200":
+          description: List of devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserDevice"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /devices/{id}:
+    delete:
+      operationId: removeDevice
+      tags: [users]
+      summary: Remove a login device for the current user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Device removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RemoveDeviceResult"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /users/me:
+    get:
+      operationId: getCurrentUser
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+    patch:
+      operationId: updateCurrentUser
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /stats/dashboard:
+    get:
+      operationId: getDashboardStats
+      tags: [stats]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /stats/video-duration:
+    get:
+      operationId: getVideoDuration
+      tags: [stats]
+      summary: Get video watch duration by day (weekly)
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [weekly, monthly]
+      responses:
+        "200":
+          description: Video duration data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VideoDurationEntry"
+
+  /stats/module-completion:
+    get:
+      operationId: getModuleCompletion
+      tags: [stats]
+      summary: Get module completion calendar for current month
+      parameters:
+        - name: month
+          in: query
+          schema:
+            type: integer
+        - name: year
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Module completion data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModuleCompletionEntry"
+
+  /stats/platform:
+    get:
+      operationId: getPlatformStats
+      tags: [stats]
+      summary: Get platform-wide stats (students, courses, instructors, hired)
+      responses:
+        "200":
+          description: Platform stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformStats"
+
+  /support-sessions:
+    get:
+      operationId: listSupportSessions
+      tags: [courses]
+      summary: List upcoming support sessions
+      responses:
+        "200":
+          description: List of support sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SupportSession"
+
+  /instructors:
+    get:
+      operationId: listInstructors
+      tags: [users]
+      summary: List instructors
+      responses:
+        "200":
+          description: List of instructors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Instructor"
+    post:
+      operationId: createInstructor
+      tags: [users]
+      summary: Create an instructor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstructorInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instructor"
+
+  /instructors/{id}:
+    delete:
+      operationId: deleteInstructor
+      tags: [users]
+      summary: Delete an instructor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /auth/register:
+    post:
+      operationId: authRegister
+      tags: [users]
+      summary: Register a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRegisterInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: authLogin
+      tags: [users]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthLoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Device limit reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceLimitError"
+
+  /auth/remove-device:
+    post:
+      operationId: authRemoveDevice
+      tags: [users]
+      summary: Remove a device session using credentials (no auth cookie required)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRemoveDeviceInput"
+      responses:
+        "204":
+          description: Device removed
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: authLogout
+      tags: [users]
+      summary: Logout current session
+      responses:
+        "204":
+          description: Logged out
+
+  /payments:
+    post:
+      operationId: submitPayment
+      tags: [payments]
+      summary: Submit a payment for course enrollment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitPaymentInput'
+      responses:
+        '201':
+          description: Payment submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRecord'
+        '400':
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    get:
+      operationId: listPayments
+      tags: [payments]
+      summary: List all payment submissions (admin)
+      responses:
+        '200':
+          description: List of payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentRecord'
+
+  /payments/{id}/status:
+    patch:
+      operationId: updatePaymentStatus
+      tags: [payments]
+      summary: Update payment status (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentStatusUpdate'
+      responses:
+        '200':
+          description: Updated payment record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRecord'
+        '404':
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Course:
+      type: object
+      required: [id, title, slug, thumbnail, instructor, category, duration, enrolledCount, isFeatured]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+        thumbnail:
+          type: string
+        instructor:
+          $ref: "#/components/schemas/Instructor"
+        category:
+          type: string
+        price:
+          type: ["number", "null"]
+        duration:
+          type: string
+        enrolledCount:
+          type: integer
+        isFeatured:
+          type: boolean
+        tag:
+          type: ["string", "null"]
+
+    CourseInput:
+      type: object
+      required: [title, category]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+        thumbnail:
+          type: string
+
+    CourseDetail:
+      type: object
+      required: [id, title, slug, thumbnail, instructor, category, duration, enrolledCount, isFeatured, modules]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+        thumbnail:
+          type: string
+        instructor:
+          $ref: "#/components/schemas/Instructor"
+        category:
+          type: string
+        price:
+          type: ["number", "null"]
+        duration:
+          type: string
+        enrolledCount:
+          type: integer
+        isFeatured:
+          type: boolean
+        tag:
+          type: ["string", "null"]
+        modules:
+          type: array
+          items:
+            $ref: "#/components/schemas/Module"
+
+    Module:
+      type: object
+      required: [id, courseId, title, weekNumber, duration, lessonCount, completedCount]
+      properties:
+        id:
+          type: integer
+        courseId:
+          type: integer
+        title:
+          type: string
+        weekNumber:
+          type: integer
+        duration:
+          type: string
+        lessonCount:
+          type: integer
+        completedCount:
+          type: integer
+        lessons:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lesson"
+
+    Lesson:
+      type: object
+      required: [id, moduleId, title, duration, orderIndex, isCompleted]
+      properties:
+        id:
+          type: integer
+        moduleId:
+          type: integer
+        title:
+          type: string
+        duration:
+          type: string
+        orderIndex:
+          type: integer
+        isCompleted:
+          type: boolean
+        videoUrl:
+          type: ["string", "null"]
+
+    LessonCompletion:
+      type: object
+      required: [lessonId, isCompleted]
+      properties:
+        lessonId:
+          type: integer
+        isCompleted:
+          type: boolean
+
+    Enrollment:
+      type: object
+      required: [id, courseId, course, progress, lastLessonTitle, enrolledAt]
+      properties:
+        id:
+          type: integer
+        courseId:
+          type: integer
+        course:
+          $ref: "#/components/schemas/Course"
+        progress:
+          type: number
+        lastLessonTitle:
+          type: ["string", "null"]
+        enrolledAt:
+          type: string
+
+    BootcampInput:
+      type: object
+      required: [title, startDate, endDate, type]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        thumbnail:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        type:
+          type: string
+          enum: [bootcamp, event]
+        status:
+          type: string
+          enum: [upcoming, open, closed]
+
+    Bootcamp:
+      type: object
+      required: [id, title, thumbnail, startDate, endDate, type, status]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        thumbnail:
+          type: string
+        description:
+          type: ["string", "null"]
+        startDate:
+          type: string
+        endDate:
+          type: string
+        type:
+          type: string
+          enum: [bootcamp, event]
+        status:
+          type: string
+          enum: [upcoming, open, closed]
+
+    Post:
+      type: object
+      required: [id, title, content, author, category, status, createdAt, commentCount]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        author:
+          $ref: "#/components/schemas/User"
+        category:
+          type: string
+        status:
+          type: string
+          enum: [open, investigating, acknowledged, resolved]
+        createdAt:
+          type: string
+        commentCount:
+          type: integer
+        platform:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+
+    PostStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [open, investigating, acknowledged, resolved]
+
+    PostInput:
+      type: object
+      required: [title, content, category]
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        category:
+          type: string
+
+    Comment:
+      type: object
+      required: [id, postId, content, author, createdAt]
+      properties:
+        id:
+          type: integer
+        postId:
+          type: integer
+        content:
+          type: string
+        author:
+          $ref: "#/components/schemas/User"
+        createdAt:
+          type: string
+
+    CommentInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+
+    AnnouncementInput:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+
+    Announcement:
+      type: object
+      required: [id, title, content, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+
+    UserDevice:
+      type: object
+      required: [id, userId, platform, loginAt, lastActiveAt, current]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        platform:
+          type: string
+        userAgent:
+          type: ["string", "null"]
+        loginAt:
+          type: string
+          format: date-time
+        lastActiveAt:
+          type: string
+          format: date-time
+        current:
+          type: boolean
+          description: Whether this is the device making the current request
+
+    RemoveDeviceResult:
+      type: object
+      required: [wasCurrent]
+      properties:
+        wasCurrent:
+          type: boolean
+          description: True if the removed device was the caller's own session
+
+    User:
+      type: object
+      required: [id, name, email]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        studentId:
+          type: ["string", "null"]
+        avatar:
+          type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [student, instructor, admin, mentor, editor]
+        addressLine1:
+          type: ["string", "null"]
+        addressLine2:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        zipCode:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        educationLevel:
+          type: ["string", "null"]
+        examTitle:
+          type: ["string", "null"]
+        institute:
+          type: ["string", "null"]
+        passingYear:
+          type: ["string", "null"]
+        cvLink:
+          type: ["string", "null"]
+        githubLink:
+          type: ["string", "null"]
+        portfolioLink:
+          type: ["string", "null"]
+        linkedinLink:
+          type: ["string", "null"]
+        professionalImageLink:
+          type: ["string", "null"]
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        bio:
+          type: string
+        avatar:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        password:
+          type: string
+          minLength: 6
+        addressLine1:
+          type: string
+        addressLine2:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zipCode:
+          type: string
+        country:
+          type: string
+        educationLevel:
+          type: string
+        examTitle:
+          type: string
+        institute:
+          type: string
+        passingYear:
+          type: string
+        cvLink:
+          type: string
+        githubLink:
+          type: string
+        portfolioLink:
+          type: string
+        linkedinLink:
+          type: string
+        professionalImageLink:
+          type: string
+
+    AdminStudent:
+      type: object
+      required: [id, name, email, role]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        studentId:
+          type: ["string", "null"]
+        avatar:
+          type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [student, mentor, editor, admin, instructor]
+        enrolledCount:
+          type: integer
+        createdAt:
+          type: string
+        status:
+          type: ["string", "null"]
+        addressLine1:
+          type: ["string", "null"]
+        addressLine2:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        zipCode:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        educationLevel:
+          type: ["string", "null"]
+        examTitle:
+          type: ["string", "null"]
+        institute:
+          type: ["string", "null"]
+        passingYear:
+          type: ["string", "null"]
+        cvLink:
+          type: ["string", "null"]
+        githubLink:
+          type: ["string", "null"]
+        portfolioLink:
+          type: ["string", "null"]
+        linkedinLink:
+          type: ["string", "null"]
+        professionalImageLink:
+          type: ["string", "null"]
+
+    BatchStats:
+      type: object
+      required: [watchedCount, totalCount, progressPercent, weeklyDuration, watchedClassIds]
+      properties:
+        watchedCount:
+          type: integer
+        totalCount:
+          type: integer
+        progressPercent:
+          type: number
+        watchedClassIds:
+          type: array
+          items:
+            type: integer
+        weeklyDuration:
+          type: array
+          items:
+            type: object
+            required: [date, minutes]
+            properties:
+              date:
+                type: string
+              minutes:
+                type: integer
+
+    AnnouncementItem:
+      type: object
+      required: [id, title, content, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+
+    WatchInput:
+      type: object
+      properties:
+        durationMinutes:
+          type: integer
+
+    MyBatch:
+      type: object
+      required: [id, name, status, createdAt, classCount]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          nullable: true
+        endDate:
+          type: string
+          nullable: true
+        status:
+          type: string
+        createdAt:
+          type: string
+        classCount:
+          type: integer
+        problemsEnabled:
+          type: boolean
+
+    BatchPost:
+      type: object
+      required: [id, title, content, authorId, category, status, createdAt, commentCount]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        authorId:
+          type: integer
+        batchId:
+          type: integer
+          nullable: true
+        category:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+        authorName:
+          type: string
+          nullable: true
+        authorAvatar:
+          type: string
+          nullable: true
+        commentCount:
+          type: integer
+
+    BatchPostInput:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        category:
+          type: string
+
+    BatchComment:
+      type: object
+      required: [id, postId, content, authorId, createdAt]
+      properties:
+        id:
+          type: integer
+        postId:
+          type: integer
+        content:
+          type: string
+        authorId:
+          type: integer
+        createdAt:
+          type: string
+        authorName:
+          type: string
+          nullable: true
+        authorAvatar:
+          type: string
+          nullable: true
+
+    BatchCommentInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+
+    AddBatchStudentInput:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: integer
+
+    Batch:
+      type: object
+      required: [id, name, status, createdAt, classCount, studentCount]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          nullable: true
+        endDate:
+          type: string
+          nullable: true
+        status:
+          type: string
+        createdAt:
+          type: string
+        classCount:
+          type: integer
+        studentCount:
+          type: integer
+        problemsEnabled:
+          type: boolean
+
+    BatchInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        status:
+          type: string
+          enum: [upcoming, active, ended]
+        problemsEnabled:
+          type: boolean
+
+    VideoItem:
+      type: object
+      required: [title, url]
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+
+    BatchClass:
+      type: object
+      required: [id, batchId, title, isPublished, createdAt]
+      properties:
+        id:
+          type: integer
+        batchId:
+          type: integer
+        weekName:
+          type: string
+          nullable: true
+        moduleName:
+          type: string
+          nullable: true
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        videoUrl:
+          type: string
+          nullable: true
+        videoUrls:
+          type: array
+          items:
+            $ref: "#/components/schemas/VideoItem"
+          nullable: true
+        scheduledAt:
+          type: string
+          nullable: true
+        isPublished:
+          type: boolean
+        createdAt:
+          type: string
+
+    BatchClassInput:
+      type: object
+      required: [title]
+      properties:
+        weekName:
+          type: string
+        moduleName:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        videoUrl:
+          type: string
+        videoUrls:
+          type: array
+          items:
+            $ref: "#/components/schemas/VideoItem"
+        scheduledAt:
+          type: string
+        isPublished:
+          type: boolean
+
+    BatchStudentItem:
+      type: object
+      required: [id, batchId, userId, joinedAt]
+      properties:
+        id:
+          type: integer
+        batchId:
+          type: integer
+        userId:
+          type: integer
+        joinedAt:
+          type: string
+        name:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        avatar:
+          type: string
+          nullable: true
+
+    BatchDetail:
+      type: object
+      required: [id, name, status, createdAt, classes, students]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          nullable: true
+        endDate:
+          type: string
+          nullable: true
+        status:
+          type: string
+        createdAt:
+          type: string
+        problemsEnabled:
+          type: boolean
+        classes:
+          type: array
+          items:
+            $ref: "#/components/schemas/BatchClass"
+        students:
+          type: array
+          items:
+            $ref: "#/components/schemas/BatchStudentItem"
+
+    AdminStudentCreate:
+      type: object
+      required: [name, email, phone, password]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        password:
+          type: string
+          minLength: 6
+        role:
+          type: string
+          enum: [student, mentor, editor, admin]
+
+    AdminStudentUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        bio:
+          type: string
+        avatar:
+          type: string
+        password:
+          type: string
+          minLength: 6
+        role:
+          type: string
+          enum: [student, mentor, editor, admin]
+        status:
+          type: string
+          enum: [active, suspended]
+
+    InstructorInput:
+      type: object
+      required: [name, title]
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+        avatar:
+          type: string
+        bio:
+          type: string
+
+    Instructor:
+      type: object
+      required: [id, name, avatar, title]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        avatar:
+          type: string
+        title:
+          type: string
+        bio:
+          type: ["string", "null"]
+
+    DashboardStats:
+      type: object
+      required: [totalCourses, completedLessons, totalLessons, studyStreakDays, totalWatchMinutes]
+      properties:
+        totalCourses:
+          type: integer
+        completedLessons:
+          type: integer
+        totalLessons:
+          type: integer
+        studyStreakDays:
+          type: integer
+        totalWatchMinutes:
+          type: integer
+
+    VideoDurationEntry:
+      type: object
+      required: [date, minutes]
+      properties:
+        date:
+          type: string
+        minutes:
+          type: integer
+
+    ModuleCompletionEntry:
+      type: object
+      required: [day, completed]
+      properties:
+        day:
+          type: integer
+        completed:
+          type: boolean
+
+    PlatformStats:
+      type: object
+      required: [totalStudents, totalCourses, totalInstructors, totalHired]
+      properties:
+        totalStudents:
+          type: integer
+        totalCourses:
+          type: integer
+        totalInstructors:
+          type: integer
+        totalHired:
+          type: integer
+
+    SupportSession:
+      type: object
+      required: [id, dayOfWeek, times, isLive]
+      properties:
+        id:
+          type: integer
+        dayOfWeek:
+          type: string
+        times:
+          type: array
+          items:
+            type: string
+        isLive:
+          type: boolean
+
+    HeroSettings:
+      type: object
+      properties:
+        headline1: { type: string }
+        headline2: { type: string }
+        subtitle: { type: string }
+        enrollmentStartDate: { type: string }
+        enrollmentEndDate: { type: string }
+        enrollButtonText: { type: string }
+        bannerTitle1: { type: string }
+        bannerTitle2: { type: string }
+        bannerVideoUrl: { type: string }
+        bannerThumbnailUrl: { type: string }
+
+    StatItem:
+      type: object
+      properties:
+        value: { type: string }
+        label: { type: string }
+
+    StatsSettings:
+      type: object
+      properties:
+        sectionTitle: { type: string }
+        sectionSubtitle: { type: string }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatItem"
+
+    FeatureItem:
+      type: object
+      properties:
+        title: { type: string }
+        desc: { type: string }
+
+    FeaturesSettings:
+      type: object
+      properties:
+        badge: { type: string }
+        title: { type: string }
+        subtitle: { type: string }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeatureItem"
+
+    CtaSettings:
+      type: object
+      properties:
+        badge: { type: string }
+        title: { type: string }
+        description: { type: string }
+        buttonText: { type: string }
+
+    RoadmapStep:
+      type: object
+      properties:
+        title: { type: string }
+        desc: { type: string }
+
+    RoadmapSettings:
+      type: object
+      properties:
+        badge: { type: string }
+        title: { type: string }
+        highlightedWord: { type: string }
+        subtitle: { type: string }
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoadmapStep"
+
+    SiteSettingsData:
+      type: object
+      properties:
+        hero:
+          $ref: "#/components/schemas/HeroSettings"
+        stats:
+          $ref: "#/components/schemas/StatsSettings"
+        features:
+          $ref: "#/components/schemas/FeaturesSettings"
+        cta:
+          $ref: "#/components/schemas/CtaSettings"
+        roadmap:
+          $ref: "#/components/schemas/RoadmapSettings"
+
+    SiteSettingsResponse:
+      type: object
+      required: [settings]
+      properties:
+        settings:
+          $ref: "#/components/schemas/SiteSettingsData"
+        updatedAt:
+          type: string
+
+    SiteSettingsInput:
+      type: object
+      properties:
+        hero:
+          $ref: "#/components/schemas/HeroSettings"
+        stats:
+          $ref: "#/components/schemas/StatsSettings"
+        features:
+          $ref: "#/components/schemas/FeaturesSettings"
+        cta:
+          $ref: "#/components/schemas/CtaSettings"
+        roadmap:
+          $ref: "#/components/schemas/RoadmapSettings"
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    PaymentStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [pending, verified, rejected]
+
+    SubmitPaymentInput:
+      type: object
+      required: [courseName, amount, paymentMethod, paymentPhone, txnId]
+      properties:
+        courseName:
+          type: string
+          minLength: 1
+        amount:
+          type: integer
+          minimum: 1
+        paymentMethod:
+          type: string
+          enum: [bkash, nagad]
+        paymentPhone:
+          type: string
+          minLength: 6
+        txnId:
+          type: string
+          minLength: 1
+
+    PaymentRecord:
+      type: object
+      required: [id, userId, courseName, amount, paymentMethod, paymentPhone, txnId, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        courseName:
+          type: string
+        amount:
+          type: integer
+        paymentMethod:
+          type: string
+        paymentPhone:
+          type: string
+        txnId:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        userName:
+          type: string
+          nullable: true
+        userEmail:
+          type: string
+          nullable: true
+
+    ProblemBundle:
+      type: object
+      required: [id, title, createdAt, problemCount]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        problemCount:
+          type: integer
+
+    ProblemBundleCreate:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+
+    BundleProblemItem:
+      type: object
+      required: [id, bundleId, problemId, orderIndex, title]
+      properties:
+        id:
+          type: integer
+        bundleId:
+          type: integer
+        problemId:
+          type: integer
+        orderIndex:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        totalMarks:
+          type: integer
+
+    AddBundleProblemInput:
+      type: object
+      required: [problemId]
+      properties:
+        problemId:
+          type: integer
+        orderIndex:
+          type: integer
+
+    BatchProblemBundleAssignment:
+      type: object
+      required: [id, batchId, bundleId, bundleTitle, problemCount, createdAt]
+      properties:
+        id:
+          type: integer
+        batchId:
+          type: integer
+        bundleId:
+          type: integer
+        bundleTitle:
+          type: string
+        bundleDescription:
+          type: string
+          nullable: true
+        startAt:
+          type: string
+          format: date-time
+          nullable: true
+        endAt:
+          type: string
+          format: date-time
+          nullable: true
+        problemCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    AssignBatchProblemBundleInput:
+      type: object
+      required: [bundleId]
+      properties:
+        bundleId:
+          type: integer
+        startAt:
+          type: string
+          format: date-time
+          nullable: true
+        endAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    UpdateBatchProblemBundleInput:
+      type: object
+      properties:
+        startAt:
+          type: string
+          format: date-time
+          nullable: true
+        endAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    BatchProblemBundleResult:
+      type: object
+      required: [assignmentId, bundleId, bundleTitle, testCasesVisible, isExpired, isUpcoming, problems]
+      properties:
+        assignmentId:
+          type: integer
+        bundleId:
+          type: integer
+        bundleTitle:
+          type: string
+        bundleDescription:
+          type: string
+          nullable: true
+        startAt:
+          type: string
+          format: date-time
+          nullable: true
+        endAt:
+          type: string
+          format: date-time
+          nullable: true
+        testCasesVisible:
+          type: boolean
+        isExpired:
+          type: boolean
+        isUpcoming:
+          type: boolean
+        problems:
+          type: array
+          items:
+            type: object
+            required: [id, title]
+            properties:
+              id:
+                type: integer
+              title:
+                type: string
+              description:
+                type: string
+                nullable: true
+              constraints:
+                type: string
+                nullable: true
+              inputFormat:
+                type: string
+                nullable: true
+              outputFormat:
+                type: string
+                nullable: true
+              totalMarks:
+                type: integer
+              orderIndex:
+                type: integer
+
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Original file name.
+        size:
+          type: integer
+          minimum: 1
+          description: File size in bytes.
+        contentType:
+          type: string
+          minLength: 1
+          description: MIME type of the file (e.g. `image/jpeg`).
+
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+          description: Presigned GCS URL for PUT upload.
+        objectPath:
+          type: string
+          description: Normalized object path (e.g. `/objects/uploads/uuid`). Store this in your database.
+        metadata:
+          $ref: '#/components/schemas/UploadUrlRequest'
+
+    AuthRegisterInput:
+      type: object
+      required: [name, email, phone, password]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+        phone:
+          type: string
+          minLength: 6
+        password:
+          type: string
+          minLength: 6
+
+    AuthLoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    DeviceLimitError:
+      type: object
+      required: [error, devices]
+      properties:
+        error:
+          type: string
+        devices:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserDevice"
+
+    AuthRemoveDeviceInput:
+      type: object
+      required: [email, password, deviceId]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        deviceId:
+          type: integer
